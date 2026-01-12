@@ -3,7 +3,7 @@
  * Using Bhagavad Gita API
  */
 
-const API_BASE = 'https://bhagavadgitaapi.in';
+const API_BASE = 'https://vedicscriptures.github.io';
 
 // Chapter data
 const CHAPTERS = [
@@ -109,8 +109,8 @@ async function loadChapter(chapterNum) {
 
 // Fallback sample verses for when API is blocked by CORS
 function getFallbackVerses(chapterNum) {
-    if (chapterNum === 1) {
-        return [
+    const SAMPLE_VERSES = {
+        1: [
             {
                 slok: 'धृतराष्ट्र उवाच |\nधर्मक्षेत्रे कुरुक्षेत्रे समवेता युयुत्सवः |\nमामकाः पाण्डवाश्चैव किमकुर्वत सञ्जय ||१||',
                 transliteration: 'dhṛtarāṣṭra uvāca\ndharma-kṣetre kuru-kṣetre samavetā yuyutsavaḥ\nmāmakāḥ pāṇḍavāś caiva kim akurvata sañjaya',
@@ -129,9 +129,49 @@ function getFallbackVerses(chapterNum) {
                 tej: { ht: 'हे आचार्य! पाण्डु पुत्रों की इस विशाल सेना को देखिए, जिसे आपके बुद्धिमान शिष्य द्रुपद पुत्र ने व्यवस्थित किया है।' },
                 spiit: 'O teacher, behold this mighty army of the sons of Pandu, arrayed for battle by your intelligent disciple, the son of Drupada.'
             }
-        ];
-    }
-    return [];
+        ],
+        2: [
+            {
+                slok: 'सञ्जय उवाच |\nतं तथा कृपयाविष्टमश्रुपूर्णाकुलेक्षणम् |\nविषीदन्तमिदं वाक्यमुवाच मधुसूदनः ||१||',
+                transliteration: 'sañjaya uvāca\ntaṃ tathā kṛpayāviṣṭam aśru-pūrṇākulekṣaṇam\nviṣīdantam idaṃ vākyam uvāca madhusūdanaḥ',
+                tej: { ht: 'संजय ने कहा: इस प्रकार करुणा से व्याप्त, आँसुओं से भरी और व्याकुल आँखों वाले, शोक करते हुए अर्जुन से मधुसूदन ने कहा।' },
+                spiit: 'Sanjaya said: To him who was thus overcome with pity, whose eyes were filled with tears and who was agitated, Madhusudana spoke these words.'
+            },
+            {
+                slok: 'श्रीभगवानुवाच |\nकुतस्त्वा कश्मलमिदं विषमे समुपस्थितम् |\nअनार्यजुष्टमस्वर्ग्यमकीर्तिकरमर्जुन ||२||',
+                transliteration: 'śrī-bhagavān uvāca\nkutas tvā kaśmalam idaṃ viṣame samupasthitam\nanārya-juṣṭam asvargyam akīrti-karam arjuna',
+                tej: { ht: 'श्री भगवान ने कहा: हे अर्जुन! इस कठिन समय में तुम्हें यह मोह कैसे हुआ? यह श्रेष्ठ पुरुषों के योग्य नहीं, न स्वर्ग देने वाला है, न कीर्ति देने वाला।' },
+                spiit: 'The Supreme Lord said: From where has this weakness arisen in you at this critical time? It is not befitting a noble person, nor does it lead to heaven or glory, O Arjuna.'
+            },
+            {
+                slok: 'कर्मण्येवाधिकारस्ते मा फलेषु कदाचन |\nमा कर्मफलहेतुर्भूर्मा ते सङ्गोऽस्त्वकर्मणि ||४७||',
+                transliteration: 'karmaṇy evādhikāras te mā phaleṣu kadācana\nmā karma-phala-hetur bhūr mā te saṅgo \'stv akarmaṇi',
+                tej: { ht: 'तुम्हारा अधिकार केवल कर्म करने में है, उसके फलों में कभी नहीं। इसलिए तुम कर्मफल के हेतु मत बनो और अकर्म में भी तुम्हारी आसक्ति न हो।' },
+                spiit: 'You have a right to perform your prescribed duties, but you are not entitled to the fruits of your actions. Never consider yourself to be the cause of the results, and never be attached to inaction.'
+            },
+            {
+                slok: 'योगस्थः कुरु कर्माणि सङ्गं त्यक्त्वा धनञ्जय |\nसिद्ध्यसिद्ध्योः समो भूत्वा समत्वं योग उच्यते ||४८||',
+                transliteration: 'yoga-sthaḥ kuru karmāṇi saṅgaṃ tyaktvā dhanañjaya\nsiddhy-asiddhyoḥ samo bhūtvā samatvaṃ yoga ucyate',
+                tej: { ht: 'हे धनञ्जय! योग में स्थित होकर और आसक्ति त्यागकर कर्म करो। सिद्धि और असिद्धि में समान भाव रखो; यह समत्व ही योग कहलाता है।' },
+                spiit: 'Be steadfast in yoga, O Arjuna. Perform your duty and abandon all attachment to success or failure. Such evenness of mind is called yoga.'
+            }
+        ],
+        3: [
+            {
+                slok: 'अर्जुन उवाच |\nज्यायसी चेत्कर्मणस्ते मता बुद्धिर्जनार्दन |\nतत्किं कर्मणि घोरे मां नियोजयसि केशव ||१||',
+                transliteration: 'arjuna uvāca\njyāyasī cet karmaṇas te matā buddhir janārdana\ntat kiṃ karmaṇi ghore māṃ niyojayasi keśava',
+                tej: { ht: 'अर्जुन ने कहा: हे जनार्दन! यदि कर्म से बुद्धि श्रेष्ठ है, तो फिर हे केशव! आप मुझे इस भयंकर कर्म में क्यों लगाते हैं?' },
+                spiit: 'Arjuna said: O Janardana, if you consider knowledge superior to action, why then do you urge me to engage in this terrible action, O Keshava?'
+            },
+            {
+                slok: 'न हि कश्चित्क्षणमपि जातु तिष्ठत्यकर्मकृत् |\nकार्यते ह्यवशः कर्म सर्वः प्रकृतिजैर्गुणैः ||५||',
+                transliteration: 'na hi kaścit kṣaṇam api jātu tiṣṭhaty akarma-kṛt\nkāryate hy avaśaḥ karma sarvaḥ prakṛti-jair guṇaiḥ',
+                tej: { ht: 'कोई भी मनुष्य एक क्षण भी बिना कर्म किए नहीं रह सकता, क्योंकि प्रकृति जनित गुणों द्वारा सभी विवश होकर कर्म करते हैं।' },
+                spiit: 'No one can remain without action even for a moment. Everyone is helplessly driven to action by the qualities born of material nature.'
+            }
+        ]
+    };
+    return SAMPLE_VERSES[chapterNum] || [];
 }
 
 function renderVerses(data, chapter) {
