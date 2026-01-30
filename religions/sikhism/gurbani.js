@@ -20,6 +20,15 @@ async function init() {
     const saved = HoliBooks.storage.get('gurbani_ang');
     if (saved) currentAng = saved;
 
+    // Check URL params
+    const params = HoliBooks.getQueryParams();
+    if (params.page) {
+        const pageNum = parseInt(params.page);
+        if (pageNum >= 1 && pageNum <= TOTAL_ANGS) {
+            currentAng = pageNum;
+        }
+    }
+
     angInput.value = currentAng;
     await loadAng(currentAng);
     setupEventListeners();

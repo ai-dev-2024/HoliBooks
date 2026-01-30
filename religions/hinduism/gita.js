@@ -42,6 +42,15 @@ async function init() {
     const saved = HoliBooks.storage.get('gita_chapter');
     if (saved) currentChapter = saved;
 
+    // Check URL params
+    const params = HoliBooks.getQueryParams();
+    if (params.chapter) {
+        const chapterNum = parseInt(params.chapter);
+        if (chapterNum >= 1 && chapterNum <= 18) {
+            currentChapter = chapterNum;
+        }
+    }
+
     populateChapterDropdown();
     await loadChapter(currentChapter);
     setupEventListeners();

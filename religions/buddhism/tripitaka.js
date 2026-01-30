@@ -61,6 +61,23 @@ async function init() {
     const saved = HoliBooks.storage.get('dhammapada_chapter');
     if (saved) currentChapter = saved;
 
+    // Check URL params
+    const params = HoliBooks.getQueryParams();
+    if (params.chapter) {
+        const chapterNum = parseInt(params.chapter);
+        if (chapterNum >= 1 && chapterNum <= 26) {
+            currentChapter = chapterNum;
+        }
+    }
+    if (params.verse) {
+        const verseNum = parseInt(params.verse);
+        // Find which chapter contains this verse
+        const chapter = CHAPTERS.find(ch => verseNum >= ch.verses[0] && verseNum <= ch.verses[1]);
+        if (chapter) {
+            currentChapter = chapter.number;
+        }
+    }
+
     populateChapterDropdown();
     await loadChapter(currentChapter);
     setupEventListeners();
