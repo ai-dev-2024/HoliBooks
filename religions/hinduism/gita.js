@@ -28,6 +28,7 @@ const CHAPTERS = [
 ];
 
 let currentChapter = 1;
+let currentLanguage = 'both'; // 'both', 'hindi', 'sanskrit'
 
 const chapterSelect = document.getElementById('chapter-select');
 const prevBtn = document.getElementById('prev-chapter');
@@ -37,10 +38,16 @@ const chapterEnglish = document.getElementById('chapter-english');
 const verseCount = document.getElementById('verse-count');
 const versesContainer = document.getElementById('verses-container');
 const themeToggle = document.getElementById('theme-toggle');
+const languageBtn = document.getElementById('language-btn');
+const currentLanguageSpan = document.getElementById('current-language');
 
 async function init() {
-    const saved = HoliBooks.storage.get('gita_chapter');
-    if (saved) currentChapter = saved;
+    // Load saved preferences
+    const savedChapter = HoliBooks.storage.get('gita_chapter');
+    if (savedChapter) currentChapter = savedChapter;
+
+    const savedLanguage = HoliBooks.storage.get('gita_language');
+    if (savedLanguage) currentLanguage = savedLanguage;
 
     // Check URL params
     const params = HoliBooks.getQueryParams();
@@ -52,6 +59,8 @@ async function init() {
     }
 
     populateChapterDropdown();
+    updateLanguageButton();
+    updateMobileLanguageButtons();
     await loadChapter(currentChapter);
     setupEventListeners();
 }
@@ -77,6 +86,9 @@ async function loadChapter(chapterNum) {
 
         // Fetch verses with retry
         const response = await HoliBooks.fetchWithRetry(`${API_BASE}/slok/${chapterNum}`, {}, 2);
+
+        // Cache data for language switching
+        window.currentGitaData = response;
 
         // Render verses
         renderVerses(response, chapter);
@@ -206,12 +218,19 @@ function renderVerses(data, chapter) {
 
     let html = '';
     verses.forEach((verse, index) => {
+        // Determine what to show based on language preference
+        const showSanskrit = currentLanguage !== 'none';
+        const showTranslation = currentLanguage !== 'sanskrit';
+        const translationText = currentLanguage === 'hindi' 
+            ? (verse.tej?.ht || verse.spiit || '')
+            : (verse.spiit || verse.tej?.ht || '');
+
         html += `
             <article class="shloka-card">
                 <span class="shloka-number">Shloka ${index + 1}</span>
-                ${verse.slok ? `<p class="shloka-sanskrit">${verse.slok}</p>` : ''}
+                ${showSanskrit && verse.slok ? `<p class="shloka-sanskrit">${verse.slok}</p>` : ''}
                 ${verse.transliteration ? `<p class="shloka-transliteration">${verse.transliteration}</p>` : ''}
-                ${verse.tej?.ht ? `<p class="shloka-translation">${verse.tej.ht}</p>` : ''}
+                ${showTranslation && translationText ? `<p class="shloka-translation">${translationText}</p>` : ''}
             </article>
         `;
     });
@@ -243,7 +262,125 @@ function setupEventListeners() {
         if (e.key === 'ArrowRight' && currentChapter < 18) loadChapter(currentChapter + 1);
     });
 
-    themeToggle.addEventListener('click', () => HoliBooks.theme.toggle());
+    themeToggle.addEventListener('click', () => {
+        HoliBooks.theme.toggle();
+        updateThemeIcons();
+    });
+
+    // Language selector button
+    languageBtn.addEventListener('click', () => {
+        cycleLanguage();
+    });
+
+    // Mobile menu
+    setupMobileMenu();
+
+    updateThemeIcons();
+}
+
+function cycleLanguage() {
+    const languages = ['both', 'hindi', 'sanskrit'];
+    const currentIndex = languages.indexOf(currentLanguage);
+    currentLanguage = languages[(currentIndex + 1) % languages.length];
+    
+    HoliBooks.storage.set('gita_language', currentLanguage);
+    updateLanguageButton();
+    updateMobileLanguageButtons();
+    
+    // Re-render current chapter with new language
+    const chapter = CHAPTERS[currentChapter - 1];
+    const cachedData = window.currentGitaData;
+    if (cachedData) {
+        renderVerses(cachedData, chapter);
+    }
+}
+
+function updateLanguageButton() {
+    const labels = {
+        'both': 'Sanskrit + English',
+        'hindi': 'Sanskrit + Hindi',
+        'sanskrit': 'Sanskrit Only'
+    };
+    currentLanguageSpan.textContent = labels[currentLanguage] || 'Sanskrit + English';
+}
+
+function updateMobileLanguageButtons() {
+    document.querySelectorAll('.mobile-view-option').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.lang === currentLanguage);
+    });
+}
+
+function updateThemeIcons() {
+    const isDark = HoliBooks.theme.current === 'dark';
+    
+    // Desktop theme icon
+    const themeIconDark = document.getElementById('theme-icon-dark');
+    const themeIconLight = document.getElementById('theme-icon-light');
+    if (themeIconDark && themeIconLight) {
+        themeIconDark.style.display = isDark ? 'block' : 'none';
+        themeIconLight.style.display = isDark ? 'none' : 'block';
+    }
+
+    // Mobile theme button
+    const mobileThemeText = document.getElementById('mobile-theme-text');
+    const mobileThemeIcon = document.getElementById('mobile-theme-icon');
+    if (mobileThemeText) {
+        mobileThemeText.textContent = isDark ? 'Dark Mode' : 'Light Mode';
+    }
+    if (mobileThemeIcon) {
+        mobileThemeIcon.innerHTML = isDark 
+            ? '<path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/>'
+            : '<path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/>';
+    }
+}
+
+function setupMobileMenu() {
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const mobileMenuClose = document.getElementById('mobile-menu-close');
+    const mobileMenu = document.getElementById('mobile-menu');
+    const mobileMenuOverlay = document.getElementById('mobile-menu-overlay');
+
+    function openMobileMenu() {
+        mobileMenu.classList.add('active');
+        mobileMenuOverlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeMobileMenu() {
+        mobileMenu.classList.remove('active');
+        mobileMenuOverlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    if (mobileMenuBtn) mobileMenuBtn.addEventListener('click', openMobileMenu);
+    if (mobileMenuClose) mobileMenuClose.addEventListener('click', closeMobileMenu);
+    if (mobileMenuOverlay) mobileMenuOverlay.addEventListener('click', closeMobileMenu);
+
+    // Mobile language options
+    document.querySelectorAll('.mobile-view-option').forEach(btn => {
+        btn.addEventListener('click', () => {
+            currentLanguage = btn.dataset.lang;
+            HoliBooks.storage.set('gita_language', currentLanguage);
+            updateLanguageButton();
+            updateMobileLanguageButtons();
+            
+            // Re-render current chapter
+            const chapter = CHAPTERS[currentChapter - 1];
+            const cachedData = window.currentGitaData;
+            if (cachedData) {
+                renderVerses(cachedData, chapter);
+            }
+        });
+    });
+
+    // Mobile theme toggle
+    const mobileThemeBtn = document.getElementById('mobile-theme-btn');
+    if (mobileThemeBtn) {
+        mobileThemeBtn.addEventListener('click', () => {
+            HoliBooks.theme.toggle();
+            updateThemeIcons();
+        });
+    }
 }
 
 document.addEventListener('DOMContentLoaded', init);
